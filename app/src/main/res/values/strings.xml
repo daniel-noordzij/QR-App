@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QR App</string>
+    <string name="scan_hint">Point the camera at a QR code or barcode</string>
+    <string name="scan_from_image">Scan from image</string>
+    <string name="flashlight_on">Turn flashlight on</string>
+    <string name="flashlight_off">Turn flashlight off</string>
+    <string name="copy">Copy</string>
+    <string name="share">Share</string>
+    <string name="open">Open</string>
+    <string name="scan_again">Scan again</string>
+    <string name="pick_another_image">Pick another image</string>
+    <string name="copied">Copied</string>
+    <string name="clip_label">Scanned code</string>
+    <string name="no_app_to_open">No app found to open this link</string>
+    <string name="no_code_in_image">No QR code or barcode found in this image.</string>
+    <string name="image_unreadable">This image couldn\'t be opened.</string>
+    <string name="camera_permission_title">Camera access needed</string>
+    <string name="camera_permission_body">QR App uses the camera only to scan codes. Nothing is saved or sent anywhere. You can also scan a code from an image without camera access.</string>
+    <string name="camera_permission_grant">Allow camera</string>
+    <string name="camera_permission_settings">Open settings</string>
+    <string name="no_camera">No camera available on this device. You can still scan a code from an image.</string>
+    <string name="format_qr_code">QR code</string>
+    <string name="format_aztec">Aztec</string>
+    <string name="format_codabar">Codabar</string>
+    <string name="format_code_39">Code 39</string>
+    <string name="format_code_93">Code 93</string>
+    <string name="format_code_128">Code 128</string>
+    <string name="format_data_matrix">Data Matrix</string>
+    <string name="format_ean_8">EAN-8</string>
+    <string name="format_ean_13">EAN-13</string>
+    <string name="format_itf">ITF</string>
+    <string name="format_pdf417">PDF417</string>
+    <string name="format_upc_a">UPC-A</string>
+    <string name="format_upc_e">UPC-E</string>
+    <string name="format_unknown">Barcode</string>
+</resources>

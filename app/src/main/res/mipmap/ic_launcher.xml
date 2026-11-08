@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M54,4a50,50 0,1 1,0 100a50,50 0,1 1,0 -100z" />
+    <group
+        android:scaleX="2"
+        android:scaleY="2"
+        android:translateX="33"
+        android:translateY="33">
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M0,0h7v7h-7z M1,1v5h5v-5z M2,2h3v3h-3z M14,0h7v7h-7z M15,1v5h5v-5z M16,2h3v3h-3z M0,14h7v7h-7z M1,15v5h5v-5z M2,16h3v3h-3z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M9,0h1v1h-1z M11,0h1v1h-1z M8,1h1v1h-1z M10,1h1v1h-1z M12,1h1v1h-1z M9,2h1v1h-1z M10,2h1v1h-1z M8,3h1v1h-1z M12,3h1v1h-1z M10,4h1v1h-1z M11,4h1v1h-1z M8,5h1v1h-1z M9,5h1v1h-1z M12,5h1v1h-1z M8,6h1v1h-1z M10,6h1v1h-1z M12,6h1v1h-1z M0,8h1v1h-1z M2,8h1v1h-1z M4,8h1v1h-1z M5,8h1v1h-1z M6,8h1v1h-1z M8,8h1v1h-1z M9,8h1v1h-1z M11,8h1v1h-1z M14,8h1v1h-1z M15,8h1v1h-1z M17,8h1v1h-1z M19,8h1v1h-1z M20,8h1v1h-1z M1,9h1v1h-1z M3,9h1v1h-1z M10,9h1v1h-1z M12,9h1v1h-1z M13,9h1v1h-1z M16,9h1v1h-1z M18,9h1v1h-1z M0,10h1v1h-1z M1,10h1v1h-1z M4,10h1v1h-1z M6,10h1v1h-1z M8,10h1v1h-1z M11,10h1v1h-1z M12,10h1v1h-1z M15,10h1v1h-1z M17,10h1v1h-1z M19,10h1v1h-1z M2,11h1v1h-1z M3,11h1v1h-1z M5,11h1v1h-1z M9,11h1v1h-1z M10,11h1v1h-1z M13,11h1v1h-1z M14,11h1v1h-1z M16,11h1v1h-1z M20,11h1v1h-1z M0,12h1v1h-1z M4,12h1v1h-1z M6,12h1v1h-1z M8,12h1v1h-1z M12,12h1v1h-1z M15,12h1v1h-1z M18,12h1v1h-1z M19,12h1v1h-1z M9,13h1v1h-1z M10,13h1v1h-1z M11,13h1v1h-1z M14,13h1v1h-1z M17,13h1v1h-1z M20,13h1v1h-1z M8,14h1v1h-1z M9,14h1v1h-1z M12,14h1v1h-1z M13,14h1v1h-1z M16,14h1v1h-1z M18,14h1v1h-1z M19,14h1v1h-1z M10,15h1v1h-1z M11,15h1v1h-1z M14,15h1v1h-1z M15,15h1v1h-1z M17,15h1v1h-1z M20,15h1v1h-1z M8,16h1v1h-1z M11,16h1v1h-1z M13,16h1v1h-1z M16,16h1v1h-1z M18,16h1v1h-1z M19,16h1v1h-1z M9,17h1v1h-1z M12,17h1v1h-1z M14,17h1v1h-1z M15,17h1v1h-1z M17,17h1v1h-1z M8,18h1v1h-1z M10,18h1v1h-1z M11,18h1v1h-1z M13,18h1v1h-1z M16,18h1v1h-1z M19,18h1v1h-1z M20,18h1v1h-1z M9,19h1v1h-1z M12,19h1v1h-1z M14,19h1v1h-1z M17,19h1v1h-1z M18,19h1v1h-1z M8,20h1v1h-1z M10,20h1v1h-1z M11,20h1v1h-1z M13,20h1v1h-1z M15,20h1v1h-1z M16,20h1v1h-1z M19,20h1v1h-1z" />
+    </group>
+</vector>
