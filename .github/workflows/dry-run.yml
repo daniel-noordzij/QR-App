@@ -1,0 +1,61 @@
+name: Dry run (temporary)
+
+on:
+  push:
+    branches: [claude/amazing-albattani-t7yt7i]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dry-run
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERSION_NAME: 1.${{ github.run_number }}
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Create throwaway keystore
+        run: |
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/release.p12" \
+            -alias qrapp -keyalg RSA -keysize 2048 -validity 2 \
+            -storepass dryrunpass -keypass dryrunpass -dname "CN=Dry run"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        env:
+          SIGNING_STORE_PASSWORD: dryrunpass
+          SIGNING_KEY_ALIAS: qrapp
+          SIGNING_KEY_PASSWORD: dryrunpass
+        run: ./gradlew --no-daemon assembleRelease -PqrVersionCode="$VERSION_CODE" -PqrVersionName="$VERSION_NAME"
+
+      - name: Verify APK
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          BUILD_TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK"
+          "$BUILD_TOOLS/aapt2" dump badging "$APK" | grep -E '^(package|sdkVersion|targetSdkVersion|application-label):'
+          PERMISSIONS="$("$BUILD_TOOLS/aapt2" dump permissions "$APK")"
+          echo "$PERMISSIONS"
+          if echo "$PERMISSIONS" | grep -qE 'android\.permission\.(INTERNET|ACCESS_NETWORK_STATE)'; then
+            echo "::error::The APK must not request network permissions."
+            exit 1
+          fi
+          cp "$APK" "QR-App-$VERSION_NAME.apk"
+
+      - name: Delete keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.p12"
