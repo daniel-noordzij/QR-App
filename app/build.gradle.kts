@@ -20,6 +20,13 @@ android {
         targetSdk = 36
         versionCode = providers.gradleProperty("qrVersionCode").map(String::toInt).getOrElse(1)
         versionName = providers.gradleProperty("qrVersionName").getOrElse("1.0-dev")
+
+        // ARM covers practically every Android phone and tablet. Leaving out x86/x86_64
+        // (emulators, a few Intel devices) halves the APK, since ML Kit ships large
+        // native libraries per CPU type.
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
     }
 
     signingConfigs {
@@ -86,6 +93,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.mlkit.vision)
     implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.mlkit.text.recognition)
 
     implementation(libs.androidx.exifinterface)
 }

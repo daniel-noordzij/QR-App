@@ -7,6 +7,7 @@ coreKtx = "1.17.0"
 lifecycle = "2.10.0"
 camerax = "1.5.3"
 mlkitBarcode = "17.3.0"
+mlkitText = "16.0.1"
 exifinterface = "1.4.2"
 
 [libraries]
@@ -25,6 +26,8 @@ androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision",
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 # Bundled model: works offline and without Google Play services.
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkitBarcode" }
+# Bundled Latin-script text recognition (OCR), also fully on-device.
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

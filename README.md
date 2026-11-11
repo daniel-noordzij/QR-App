@@ -1,10 +1,14 @@
 # QR App
 
-A small Android app that scans QR codes and barcodes and lets you copy the text.
+A small Android app that scans QR codes and barcodes, or reads printed text (OCR), and lets you
+copy the text.
 
 - Scans every barcode format ML Kit supports, using the on-device (bundled) model.
 - When it finds a code, the camera freezes and shows the code closest to the centre of the frame.
   You can select the text, or tap **Copy**, **Share**, **Open** (http/https links only), or **Scan again**.
+- **Read text**: freezes the current camera frame and reads the text in it (on-device OCR, Latin
+  script), with the same Copy, Share, Open and Scan again options. Open uses the first http/https
+  link in the text.
 - Flashlight toggle.
 - Scan from an image with the system photo picker, or share an image to QR App from another app.
 - Follows the system light/dark theme.
@@ -20,7 +24,8 @@ A small Android app that scans QR codes and barcodes and lets you copy the text.
 ## Download
 
 Get the APK from the [latest release](https://github.com/daniel-noordzij/QR-App/releases/latest).
-Requires Android 7.0 (API 24) or newer.
+Requires Android 7.0 (API 24) or newer on an ARM device (practically every phone and tablet;
+x86 emulators and Intel devices aren't supported).
 
 ## Releases
 

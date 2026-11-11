@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">QR App</string>
-    <string name="scan_hint">Point the camera at a QR code or barcode</string>
+    <string name="scan_hint">Point the camera at a QR code or barcode, or tap Read text</string>
+    <string name="read_text">Read text</string>
+    <string name="camera_not_ready">The camera isn\'t ready yet</string>
+    <string name="no_text_found">No text found. Hold the text steady in view and try again.</string>
     <string name="scan_from_image">Scan from image</string>
     <string name="flashlight_on">Turn flashlight on</string>
     <string name="flashlight_off">Turn flashlight off</string>
@@ -20,6 +23,7 @@
     <string name="camera_permission_grant">Allow camera</string>
     <string name="camera_permission_settings">Open settings</string>
     <string name="no_camera">No camera available on this device. You can still scan a code from an image.</string>
+    <string name="format_text">Text</string>
     <string name="format_qr_code">QR code</string>
     <string name="format_aztec">Aztec</string>
     <string name="format_codabar">Codabar</string>

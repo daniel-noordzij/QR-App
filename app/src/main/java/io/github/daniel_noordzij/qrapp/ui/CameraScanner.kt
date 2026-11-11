@@ -13,6 +13,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -26,6 +27,21 @@ import com.google.mlkit.vision.barcode.BarcodeScanner
 import io.github.daniel_noordzij.qrapp.ScannedCode
 import io.github.daniel_noordzij.qrapp.closestTo
 
+/** Lets the screen freeze the camera on demand, e.g. to read the text in the current frame. */
+@Stable
+class CameraScannerState {
+    internal var freezeFrame: (() -> Bitmap?)? = null
+
+    /**
+     * Stops scanning and returns the frame as shown on screen, or null if the camera isn't
+     * showing anything yet (scanning then simply continues).
+     */
+    fun freeze(): Bitmap? = freezeFrame?.invoke()
+}
+
+@Composable
+fun rememberCameraScannerState(): CameraScannerState = remember { CameraScannerState() }
+
 /**
  * Live camera preview that scans for codes. On the first detection it captures the frame
  * as shown on screen and reports the code closest to the centre of the view. Leaving the
@@ -33,6 +49,7 @@ import io.github.daniel_noordzij.qrapp.closestTo
  */
 @Composable
 fun CameraScanner(
+    state: CameraScannerState,
     scanner: BarcodeScanner,
     torchOn: Boolean,
     onFlashAvailable: (Boolean) -> Unit,
@@ -69,7 +86,7 @@ fun CameraScanner(
     val currentOnFlashAvailable by rememberUpdatedState(onFlashAvailable)
     val currentOnCameraUnavailable by rememberUpdatedState(onCameraUnavailable)
 
-    DisposableEffect(controller, lifecycleOwner) {
+    DisposableEffect(controller, lifecycleOwner, state) {
         val mainExecutor = ContextCompat.getMainExecutor(context)
         var disposed = false
         var detected = false
@@ -101,6 +118,14 @@ fun CameraScanner(
             },
         )
 
+        state.freezeFrame = freeze@{
+            if (disposed || detected) return@freeze null
+            val frame = previewView.bitmap ?: return@freeze null
+            detected = true
+            controller.clearImageAnalysisAnalyzer()
+            frame
+        }
+
         controller.initializationFuture.addListener({
             if (disposed) return@addListener
             val bound = try {
@@ -121,6 +146,7 @@ fun CameraScanner(
 
         onDispose {
             disposed = true
+            state.freezeFrame = null
             previewView.previewStreamState.removeObserver(streamObserver)
             controller.clearImageAnalysisAnalyzer()
             controller.unbind()
