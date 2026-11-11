@@ -159,6 +159,8 @@ fun QrApp(viewModel: ScanViewModel) {
 
         ScanState.Processing -> ProcessingScreen()
 
+        is ScanState.Recognizing -> RecognizingScreen(image = state.image)
+
         is ScanState.Found -> FoundScreen(
             code = state.code,
             image = state.image,
@@ -168,7 +170,7 @@ fun QrApp(viewModel: ScanViewModel) {
         is ScanState.Failed -> FailedScreen(
             message = state.message,
             image = state.image,
-            onPickImage = pickImage,
+            onPickImage = pickImage.takeIf { state.offerImagePick },
             onScanAgain = viewModel::scanAgain,
         )
     }
@@ -195,6 +197,8 @@ private fun SystemBarsEffect(lightIcons: Boolean) {
 
 @Composable
 private fun ScannerScreen(viewModel: ScanViewModel, onPickImage: () -> Unit) {
+    val context = LocalContext.current
+    val scannerState = rememberCameraScannerState()
     var hasFlash by remember { mutableStateOf(false) }
     var cameraUnavailable by remember { mutableStateOf(false) }
 
@@ -214,6 +218,7 @@ private fun ScannerScreen(viewModel: ScanViewModel, onPickImage: () -> Unit) {
             )
         } else {
             CameraScanner(
+                state = scannerState,
                 scanner = viewModel.scanner,
                 torchOn = viewModel.torchOn,
                 onFlashAvailable = { hasFlash = it },
@@ -236,21 +241,42 @@ private fun ScannerScreen(viewModel: ScanViewModel, onPickImage: () -> Unit) {
             )
         }
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .safeDrawingPadding()
-                .padding(horizontal = 32.dp, vertical = 24.dp),
+                .padding(horizontal = 24.dp, vertical = 24.dp),
         ) {
             OverlayButton(
                 icon = R.drawable.ic_image,
                 label = R.string.scan_from_image,
                 active = false,
                 onClick = onPickImage,
+                modifier = Modifier.align(Alignment.CenterStart),
             )
+            if (!cameraUnavailable) {
+                // Freezes the current frame and reads the text in it (OCR).
+                Button(
+                    onClick = {
+                        val frame = scannerState.freeze()
+                        if (frame != null) {
+                            viewModel.recognizeText(frame)
+                        } else {
+                            Toast.makeText(context, R.string.camera_not_ready, Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .heightIn(min = 56.dp),
+                ) {
+                    ButtonContent(R.drawable.ic_text, R.string.read_text)
+                }
+            }
             if (hasFlash && !cameraUnavailable) {
                 val torchOn = viewModel.torchOn
                 OverlayButton(
@@ -258,6 +284,7 @@ private fun ScannerScreen(viewModel: ScanViewModel, onPickImage: () -> Unit) {
                     label = if (torchOn) R.string.flashlight_off else R.string.flashlight_on,
                     active = torchOn,
                     onClick = { viewModel.torchOn = !torchOn },
+                    modifier = Modifier.align(Alignment.CenterEnd),
                 )
             }
         }
@@ -270,6 +297,7 @@ private fun OverlayButton(
     @StringRes label: Int,
     active: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     FilledIconButton(
         onClick = onClick,
@@ -277,7 +305,7 @@ private fun OverlayButton(
             containerColor = if (active) Color.White else Color.Black.copy(alpha = 0.55f),
             contentColor = if (active) Color.Black else Color.White,
         ),
-        modifier = Modifier.size(56.dp),
+        modifier = modifier.size(56.dp),
     ) {
         Icon(painterResource(icon), contentDescription = stringResource(label))
     }
@@ -365,6 +393,25 @@ private fun ProcessingScreen() {
     }
 }
 
+/** The frozen frame, dimmed, while its text is being read. */
+@Composable
+private fun RecognizingScreen(image: Bitmap) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+    ) {
+        FrozenFrame(image, emptyList(), Modifier.fillMaxSize())
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f)),
+        )
+        CircularProgressIndicator(color = Color.White)
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FoundScreen(code: ScannedCode, image: Bitmap?, onScanAgain: () -> Unit) {
@@ -374,7 +421,7 @@ private fun FoundScreen(code: ScannedCode, image: Bitmap?, onScanAgain: () -> Un
             .fillMaxSize()
             .background(Color.Black),
     ) {
-        FrozenFrame(image, code.outline, Modifier.fillMaxSize())
+        FrozenFrame(image, code.outlines, Modifier.fillMaxSize())
         BottomPanel(Modifier.align(Alignment.BottomCenter)) {
             Text(
                 text = stringResource(code.formatName),
@@ -421,7 +468,7 @@ private fun FoundScreen(code: ScannedCode, image: Bitmap?, onScanAgain: () -> Un
 private fun FailedScreen(
     @StringRes message: Int,
     image: Bitmap?,
-    onPickImage: () -> Unit,
+    onPickImage: (() -> Unit)?,
     onScanAgain: () -> Unit,
 ) {
     Box(
@@ -436,8 +483,10 @@ private fun FailedScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(onClick = onPickImage) {
-                    ButtonContent(R.drawable.ic_image, R.string.pick_another_image)
+                if (onPickImage != null) {
+                    Button(onClick = onPickImage) {
+                        ButtonContent(R.drawable.ic_image, R.string.pick_another_image)
+                    }
                 }
                 OutlinedButton(onClick = onScanAgain) {
                     ButtonContent(R.drawable.ic_refresh, R.string.scan_again)
@@ -480,9 +529,9 @@ private fun ButtonContent(@DrawableRes icon: Int, @StringRes label: Int) {
     Text(stringResource(label))
 }
 
-/** The frozen camera frame (or the scanned image) with the chosen code outlined. */
+/** The frozen camera frame (or the scanned image) with the chosen code or the text outlined. */
 @Composable
-private fun FrozenFrame(image: Bitmap?, outline: List<PointF>, modifier: Modifier = Modifier) {
+private fun FrozenFrame(image: Bitmap?, outlines: List<List<PointF>>, modifier: Modifier = Modifier) {
     if (image == null) return
     val imageBitmap = remember(image) { image.asImageBitmap() }
     val highlight = MaterialTheme.colorScheme.primary
@@ -493,19 +542,22 @@ private fun FrozenFrame(image: Bitmap?, outline: List<PointF>, modifier: Modifie
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize(),
         )
-        if (outline.size >= 3) {
+        val shapes = outlines.filter { it.size >= 3 }
+        if (shapes.isNotEmpty()) {
             Canvas(Modifier.fillMaxSize()) {
                 // Same mapping as ContentScale.Fit: scale to fit, then centre.
                 val scale = min(size.width / image.width, size.height / image.height)
                 val dx = (size.width - image.width * scale) / 2f
                 val dy = (size.height - image.height * scale) / 2f
                 val path = Path().apply {
-                    outline.forEachIndexed { i, p ->
-                        val x = dx + p.x * scale
-                        val y = dy + p.y * scale
-                        if (i == 0) moveTo(x, y) else lineTo(x, y)
+                    for (outline in shapes) {
+                        outline.forEachIndexed { i, p ->
+                            val x = dx + p.x * scale
+                            val y = dy + p.y * scale
+                            if (i == 0) moveTo(x, y) else lineTo(x, y)
+                        }
+                        close()
                     }
-                    close()
                 }
                 drawPath(path, highlight.copy(alpha = 0.3f))
                 drawPath(

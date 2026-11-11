@@ -1,21 +1,23 @@
 package io.github.daniel_noordzij.qrapp
 
+import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.text.Text
 import kotlin.math.max
 
-/** A decoded code. Kept in memory only. */
+/** A decoded code or a piece of recognised text. Kept in memory only. */
 class ScannedCode(
     val text: String,
     @param:StringRes val formatName: Int,
-    /** Set only when the code is an http(s) link. */
+    /** Set only when the result is (or, for text, contains) an http(s) link. */
     val link: Uri?,
-    /** Outline of the code, in the coordinates of the frame or image it was found in. */
-    val outline: List<PointF>,
+    /** Outlines to highlight, in the coordinates of the frame or image it was found in. */
+    val outlines: List<List<PointF>>,
 )
 
 /** Picks the code closest to the given point (normally the centre of the frame). */
@@ -33,7 +35,7 @@ private fun Barcode.toScannedCode(): ScannedCode? {
     val text = rawValue?.takeIf { it.isNotEmpty() }
         ?: displayValue?.takeIf { it.isNotEmpty() }
         ?: return null
-    val outline = cornerPoints?.map { PointF(it.x.toFloat(), it.y.toFloat()) }
+    val outline = cornerPoints?.toPointFs()
         ?: boundingBox?.let {
             listOf(
                 PointF(it.left.toFloat(), it.top.toFloat()),
@@ -47,9 +49,31 @@ private fun Barcode.toScannedCode(): ScannedCode? {
         text = text,
         formatName = formatName(format),
         link = text.asWebLink() ?: url?.url?.asWebLink(),
-        outline = outline,
+        outlines = listOf(outline).filter { it.isNotEmpty() },
     )
 }
+
+/** Turns OCR output into a result, or null when no text was found. */
+fun Text.toScannedCode(): ScannedCode? {
+    val content = text.trim()
+    if (content.isEmpty()) return null
+    return ScannedCode(
+        text = content,
+        formatName = R.string.format_text,
+        link = content.firstWebLink(),
+        outlines = textBlocks.mapNotNull { it.cornerPoints?.toPointFs() },
+    )
+}
+
+private fun Array<Point>.toPointFs(): List<PointF> =
+    map { PointF(it.x.toFloat(), it.y.toFloat()) }
+
+private val WEB_LINK = Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)
+private val TRAILING_PUNCTUATION = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']', '}', '\'', '"')
+
+/** The first http(s) link that appears anywhere in the text. */
+private fun String.firstWebLink(): Uri? =
+    WEB_LINK.findAll(this).firstNotNullOfOrNull { it.value.trimEnd(*TRAILING_PUNCTUATION).asWebLink() }
 
 /** Returns the text as a URI if it is a single http or https link, otherwise null. */
 fun String.asWebLink(): Uri? {

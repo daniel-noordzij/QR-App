@@ -15,6 +15,9 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,8 +30,14 @@ import kotlin.coroutines.resumeWithException
 sealed interface ScanState {
     data object Scanning : ScanState
     data object Processing : ScanState
+    /** Reading text from a frozen camera frame. */
+    class Recognizing(val image: Bitmap) : ScanState
     class Found(val code: ScannedCode, val image: Bitmap?) : ScanState
-    class Failed(@param:StringRes val message: Int, val image: Bitmap?) : ScanState
+    class Failed(
+        @param:StringRes val message: Int,
+        val image: Bitmap?,
+        val offerImagePick: Boolean = true,
+    ) : ScanState
 }
 
 /**
@@ -41,6 +50,8 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
             .build(),
     )
+    private val textRecognizer: TextRecognizer =
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     var state: ScanState by mutableStateOf(ScanState.Scanning)
         private set
@@ -50,7 +61,7 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
     var cameraPermissionRequested = false
     var cameraPermissionDeniedPermanently by mutableStateOf(false)
 
-    private var imageJob: Job? = null
+    private var job: Job? = null
 
     fun onCodeDetected(code: ScannedCode, frame: Bitmap?) {
         if (state == ScanState.Scanning) {
@@ -58,10 +69,31 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Reads the text in a frozen camera frame (OCR). */
+    fun recognizeText(frame: Bitmap) {
+        if (state != ScanState.Scanning) return
+        job?.cancel()
+        state = ScanState.Recognizing(frame)
+        job = viewModelScope.launch {
+            val code = try {
+                textRecognizer.process(InputImage.fromBitmap(frame, 0)).await().toScannedCode()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            state = if (code != null) {
+                ScanState.Found(code, frame)
+            } else {
+                ScanState.Failed(R.string.no_text_found, frame, offerImagePick = false)
+            }
+        }
+    }
+
     fun scanImage(uri: Uri) {
-        imageJob?.cancel()
+        job?.cancel()
         state = ScanState.Processing
-        imageJob = viewModelScope.launch {
+        job = viewModelScope.launch {
             val bitmap = try {
                 withContext(Dispatchers.IO) { decodeBitmap(getApplication<Application>(), uri) }
             } catch (e: CancellationException) {
@@ -90,13 +122,14 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun scanAgain() {
-        imageJob?.cancel()
-        imageJob = null
+        job?.cancel()
+        job = null
         state = ScanState.Scanning
     }
 
     override fun onCleared() {
         scanner.close()
+        textRecognizer.close()
     }
 }
 
